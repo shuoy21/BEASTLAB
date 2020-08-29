@@ -15,18 +15,21 @@ library(readr)
 ```
 - Reading in multiple csv as a vector
 ```{r}
-#participants are named raw_data1, raw_data_2......
-myfiles = list.files(pattern = "*.csv",full.names = TRUE)
-
-
-for(i in 1:length(myfiles)){
-  file_path = file.path(paste(myfiles[i], sep = ""))
-  file_name = paste("raw_data", i, sep = "")
-  assign(file_name, read.csv(file_path))
+#variable files store all the raw data
+file_names = list.files(pattern = "*.csv",full.names = TRUE)
+files = list()
+for(i in 1:length(file_names)){
+  files[[i]] = read.csv(file_names[i])
 }
 ```
 
 ```{r}
+
+accuracy = list()
+for(i in 1:length(files)){
+  accuracy[[i]] = files[[i]] %>% select(ImageFile, key_resp.keys, study_same_key.keys, key_resp_10.keys)
+}
+
 accuracy <- read.csv("Condition1/64_experiment1_2019_Nov_04_1416 copy.csv") %>% select(ï..ImageFile, key_resp.keys, study_same_key.keys, key_resp_10.keys)
 
 ```
