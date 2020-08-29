@@ -24,42 +24,35 @@ for(i in 1:length(file_names)){
 ```
 
 ```{r}
-
+# select only the accuracy data
 accuracy = list()
 for(i in 1:length(files)){
   accuracy[[i]] = files[[i]] %>% select(ImageFile, key_resp.keys, study_same_key.keys, key_resp_10.keys)
 }
 
-accuracy <- read.csv("Condition1/64_experiment1_2019_Nov_04_1416 copy.csv") %>% select(ï..ImageFile, key_resp.keys, study_same_key.keys, key_resp_10.keys)
 
 ```
 
 ```{r}
 #Renaming variables
-#The variables on the right of the equation are what we want to change
-accuracy <- accuracy %>% rename(trial = ï..ImageFile, geomresponse = key_resp.keys, neutralresponse = study_same_key.keys, erresponse = key_resp_10.keys)
-# Checking the names of the variables
-names(accuracy)
+for(i in 1:length(accuracy)){
+  colnames(accuracy[[i]]) = c("trial", "geomresponse", "neutralresponse", "erresponse")
+}
 ```
 
-
-```{r}
-#Selecting rows 3 through 11 and 97 through 217
-new <- data.frame(accuracy[c(3:11,97:216),])
-
-```
 
 
 ```{r}
 #Sorting data so that all files have the same order 
-attach(new)
-snew <- new[order(trial),]
+#attach(new)
+#snew <- new[order(trial),]
+
 ```
 
 
 ```{r}
 #Transposing dataset and keeping first row as the variable names
-tnew = setNames(data.frame(t(snew[,-1])), snew[,1])
+#tnew = setNames(data.frame(t(snew[,-1])), snew[,1])
 
 
 ```
@@ -67,7 +60,20 @@ tnew = setNames(data.frame(t(snew[,-1])), snew[,1])
 
 ```{r}
 #Write new csv
-write.csv(tnew, "Cleaned Files/Clean64.csv")
+#write.csv(tnew, "Cleaned Files/Clean64.csv")
+
+```
+
+
+```{r}
+#only select rows that have trials
+
+for(i in 1:length(accuracy)){
+  temp_file = accuracy[[i]]
+  temp_file$trial = as.character(temp_file$trial)
+  temp_file = temp_file[temp_file$trial != "", ]
+  accuracy[[i]] = temp_file
+}
 
 ```
 
