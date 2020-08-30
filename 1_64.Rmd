@@ -27,7 +27,7 @@ for(i in 1:length(file_names)){
 # select only the accuracy data
 accuracy = list()
 for(i in 1:length(files)){
-  accuracy[[i]] = files[[i]] %>% select(ImageFile, key_resp.keys, study_same_key.keys, key_resp_10.keys)
+  accuracy[[i]] = files[[i]] %>% select(ImageFile, study_same_key.keys, key_resp_10.keys)
 }
 
 
@@ -36,7 +36,7 @@ for(i in 1:length(files)){
 ```{r}
 #Renaming variables
 for(i in 1:length(accuracy)){
-  colnames(accuracy[[i]]) = c("trial", "geomresponse", "neutralresponse", "erresponse")
+  colnames(accuracy[[i]]) = c("trial", "neutralresponse", "erresponse")
 }
 ```
 
@@ -77,5 +77,40 @@ for(i in 1:length(accuracy)){
 
 ```
 
+```{r}
+#remove training data
+for(i in 1:length(accuracy)){
+  temp = accuracy[[i]]
+  accuracy[[i]] = temp[sapply(strsplit(temp$trial, split = "/"), "[[",1) == "img",]
+}
+```
+
+```{r}
+#get accuracy
+accuracy_calculated = rep(0, length(accuracy))
+for(i in 1:length(accuracy)){
+  temp = accuracy[[i]]
+  #get the indexes of trails that are same/different
+  different_indexes = which(grepl("Different",temp$trial, ignore.case = TRUE))
+  same_indexes = which(grepl("same",temp$trial, ignore.case = TRUE))
+  answers = rep("k", length(temp$trial))
+  answers[different_indexes] = "d"
+  answers[same_indexes] = "s"
+
+  #copy values of responses into a column
+  temp$neutralresponse = as.character(temp$neutralresponse) #responses are in factors
+  temp$erresponse = as.character(temp$erresponse)
+
+  neutral_response_index = which(temp$neutralresponse != "")
+  erresponse_index = which(temp$erresponse != "")
+  responses = rep("k", length(temp$trial))
+  responses[neutral_response_index] = temp$neutralresponse[neutral_response_index]
+  responses[erresponse_index] = temp$erresponse[erresponse_index]
+  
+  accuracy[[i]]$answer = answers
+  accuracy[[i]]$response = responses
+  accuracy_calculated[i] = (table(answers, responses)[1,1] + table(answers, responses)[2,2]) / length(temp$trial)
+}
+```
 
 
