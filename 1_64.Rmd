@@ -25,9 +25,9 @@ for(i in 1:length(file_names)){
 
 ```{r}
 # select only the accuracy data
-accuracy = list()
+selected_files = list()
 for(i in 1:length(files)){
-  accuracy[[i]] = files[[i]] %>% select(ImageFile, study_same_key.keys, key_resp_10.keys)
+  selected_files[[i]] = files[[i]] %>% select(ImageFile, study_same_key.keys, key_resp_10.keys,study_same_key.rt, erRT = key_resp_10.rt)
 }
 
 
@@ -35,61 +35,36 @@ for(i in 1:length(files)){
 
 ```{r}
 #Renaming variables
-for(i in 1:length(accuracy)){
-  colnames(accuracy[[i]]) = c("trial", "neutralresponse", "erresponse")
+for(i in 1:length(selected_files)){
+  colnames(selected_files[[i]]) = c("trial", "neutralresponse", "erresponse", "neutralResponseTime", "erresponseTime")
 }
 ```
-
-
-
-```{r}
-#Sorting data so that all files have the same order 
-#attach(new)
-#snew <- new[order(trial),]
-
-```
-
-
-```{r}
-#Transposing dataset and keeping first row as the variable names
-#tnew = setNames(data.frame(t(snew[,-1])), snew[,1])
-
-
-```
-
-
-```{r}
-#Write new csv
-#write.csv(tnew, "Cleaned Files/Clean64.csv")
-
-```
-
 
 ```{r}
 #only select rows that have trials
 
-for(i in 1:length(accuracy)){
-  temp_file = accuracy[[i]]
+for(i in 1:length(selected_files)){
+  temp_file = selected_files[[i]]
   temp_file$trial = as.character(temp_file$trial)
   temp_file = temp_file[temp_file$trial != "", ]
-  accuracy[[i]] = temp_file
+  selected_files[[i]] = temp_file
 }
 
 ```
 
 ```{r}
 #remove training data
-for(i in 1:length(accuracy)){
-  temp = accuracy[[i]]
-  accuracy[[i]] = temp[sapply(strsplit(temp$trial, split = "/"), "[[",1) == "img",]
+for(i in 1:length(selected_files)){
+  temp = selected_files[[i]]
+  selected_files[[i]] = temp[sapply(strsplit(temp$trial, split = "/"), "[[",1) == "img",]
 }
 ```
 
 ```{r}
 #get accuracy
-accuracy_calculated = rep(0, length(accuracy))
-for(i in 1:length(accuracy)){
-  temp = accuracy[[i]]
+accuracy_calculated = rep(0, length(selected_files))
+for(i in 1:length(selected_files)){
+  temp = selected_files[[i]]
   #get the indexes of trails that are same/different
   different_indexes = which(grepl("Different",temp$trial, ignore.case = TRUE))
   same_indexes = which(grepl("same",temp$trial, ignore.case = TRUE))
@@ -107,10 +82,41 @@ for(i in 1:length(accuracy)){
   responses[neutral_response_index] = temp$neutralresponse[neutral_response_index]
   responses[erresponse_index] = temp$erresponse[erresponse_index]
   
-  accuracy[[i]]$answer = answers
-  accuracy[[i]]$response = responses
+  selected_files[[i]]$answer = answers
+  selected_files[[i]]$response = responses
   accuracy_calculated[i] = (table(answers, responses)[1,1] + table(answers, responses)[2,2]) / length(temp$trial)
 }
 ```
 
+
+```{r}
+#get id of each participant by extracting digits from file names
+
+file_names = list.files(pattern = "*.csv")
+id_temp = sapply(strsplit(file_names, split = "_"), head, n = 1)
+accuracy_with_id = list(id = id_temp, accuracy = accuracy_calculated)
+accuracy_with_id = data.frame(accuracy_with_id)
+```
+
+- dropping outliers for response time
+
+```{r}
+#extract columns related to response time
+response_time_data = list()
+for(i in 1:length(selected_files)){
+  response_time_data[[i]] = selected_files[[i]] %>% select("trial","neutralResponseTime", "erresponseTime")
+}
+```
+
+```{r}
+#deal with neutral response time data
+#drop outliers
+outlier_index = list()
+for(i in 1:length(response_time_data)){
+  temp = response_time_data[[i]]
+  neutral_response_time = temp$neutralResponseTime
+  outlier_index[[i]] = which(abs(neutral_response_time - mean(neutral_response_time, na.rm = TRUE)) > 3 * sd(neutral_response_time, na.rm = TRUE))
+}
+
+```
 
