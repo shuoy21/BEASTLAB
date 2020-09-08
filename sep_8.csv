@@ -1,0 +1,105 @@
+library(dplyr)
+
+#variable files store all the raw data
+file_names = list.files(path = "/Users/Guest/Desktop/labWork/data",pattern = "*.csv",full.names = TRUE)
+files = list()
+for(i in 1:length(file_names)){
+  files[[i]] = read.csv(file_names[i])
+}
+
+
+# select only the accuracy data
+selected_files = list()
+for(i in 1:length(files)){
+  selected_files[[i]] = data.frame(cbind(files[[i]]$ImageFile, files[[i]]$study_same_key.keys, files[[i]]$key_resp_10.keys, files[[i]]$study_same_key.rt, files[[i]]$key_resp_10.rt))
+}
+
+
+
+#Renaming variables
+for(i in 1:length(selected_files)){
+  colnames(selected_files[[i]]) = c("trial", "neutralresponse", "erresponse", "neutralResponseTime", "erresponseTime")
+}
+
+
+
+#only select rows that have trials
+for(i in 1:length(selected_files)){
+  temp_file = selected_files[[i]]
+  temp_file$trial = as.character(temp_file$trial)
+  temp_file = temp_file[temp_file$trial != "", ]
+  selected_files[[i]] = temp_file
+}
+
+
+
+#remove training data
+for(i in 1:length(selected_files)){
+  temp = selected_files[[i]]
+  selected_files[[i]] = temp[sapply(strsplit(temp$trial, split = "/"), "[[",1) == "img",]
+}
+
+
+
+#get accuracy
+accuracy_calculated = rep(0, length(selected_files))
+for(i in 1:length(selected_files)){
+  temp = selected_files[[i]]
+  #get the indexes of trails that are same/different
+  different_indexes = which(grepl("Different",temp$trial, ignore.case = TRUE))
+  same_indexes = which(grepl("same",temp$trial, ignore.case = TRUE))
+  answers = rep("k", length(temp$trial))
+  answers[different_indexes] = "d"
+  answers[same_indexes] = "s"
+  #copy values of responses into a column
+  temp$neutralresponse = as.character(temp$neutralresponse) #responses are in factors
+  temp$erresponse = as.character(temp$erresponse)
+  neutral_response_index = which(temp$neutralresponse != "")
+  erresponse_index = which(temp$erresponse != "")
+  responses = rep("k", length(temp$trial))
+  responses[neutral_response_index] = temp$neutralresponse[neutral_response_index]
+  responses[erresponse_index] = temp$erresponse[erresponse_index]
+  
+  selected_files[[i]]$answer = answers
+  selected_files[[i]]$response = responses
+  accuracy_calculated[i] = (table(answers, responses)[1,1] + table(answers, responses)[2,2]) / length(temp$trial)
+}
+
+
+
+
+#get id of each participant by extracting digits from file names
+file_names = list.files(path = "/Users/Guest/Desktop/labWork/data",pattern = "*.csv")
+id_temp = sapply(strsplit(file_names, split = "_"), head, n = 1)
+
+accuracy_with_id = list(id = id_temp, accuracy = accuracy_calculated)
+accuracy_with_id = data.frame(accuracy_with_id)
+
+#rename files with their id
+file.rename(file_names, paste(id_temp, ".csv", sep = ""))
+
+#drop cases that average accuracy < 60%
+file_names = list.files(path = "/Users/Guest/Desktop/labWork/data",pattern = "*.csv")
+bad_index = which(accuracy_with_id$accuracy < 0.6)
+file.remove(paste(accuracy_with_id$id[bad_index], ".csv", sep = ""))
+
+#extract columns related to response time
+response_time_data = list()
+for(i in 1:length(selected_files)){
+  response_time_data[[i]] =  select(selected_files[[i]],trial,neutralResponseTime, erresponseTime)
+}
+
+
+
+#deal with neutral response time data
+#drop outliers
+outlier_index = list()
+for(i in 1:length(response_time_data)){
+  temp = response_time_data[[i]]
+  neutral_response_time = as.numeric(temp$neutralResponseTime)
+  outlier_index[[i]] = which(neutral_response_time > mean(neutral_response_time,na.rm = TRUE) + 3*sd(neutral_response_time, na.rm = TRUE))
+}
+
+for (i in 1:length(response_time_data)) {
+  response_time_data[[i]] = response_time_data[[i]][, -as.vector(outlier_index[[i]])]
+}
