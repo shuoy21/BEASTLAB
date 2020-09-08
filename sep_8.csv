@@ -71,17 +71,22 @@ for(i in 1:length(selected_files)){
 #get id of each participant by extracting digits from file names
 file_names = list.files(path = "/Users/Guest/Desktop/labWork/data",pattern = "*.csv")
 id_temp = sapply(strsplit(file_names, split = "_"), head, n = 1)
+id_temp = sapply(strsplit(id_temp, split = ".csv"), head, n = 1)
 
 accuracy_with_id = list(id = id_temp, accuracy = accuracy_calculated)
 accuracy_with_id = data.frame(accuracy_with_id)
 
 #rename files with their id
-file.rename(file_names, paste(id_temp, ".csv", sep = ""))
+#file.rename(file_names, paste(id_temp, ".csv", sep = ""))
 
 #drop cases that average accuracy < 60%
-file_names = list.files(path = "/Users/Guest/Desktop/labWork/data",pattern = "*.csv")
-bad_index = which(accuracy_with_id$accuracy < 0.6)
-file.remove(paste(accuracy_with_id$id[bad_index], ".csv", sep = ""))
+files_with_id = list()
+for(i in 1:length(selected_files)){
+  files_with_id[[i]] = list(file = selected_files[[i]], id = as.numeric(sapply(strsplit(list.files(path = "/Users/Guest/Desktop/labWork/data",pattern = "*.csv"), split = ".csv"), head, n = 1)[i]))
+}
+
+bad_id = accuracy_with_id$id[accuracy_with_id$accuracy < 0.6] #id of files with accuracy less than 0.6
+files_with_id = files_with_id[accuracy_with_id$id != bad_id]
 
 #extract columns related to response time
 response_time_data = list()
@@ -97,7 +102,10 @@ outlier_index = list()
 for(i in 1:length(response_time_data)){
   temp = response_time_data[[i]]
   neutral_response_time = as.numeric(temp$neutralResponseTime)
-  outlier_index[[i]] = which(neutral_response_time > mean(neutral_response_time,na.rm = TRUE) + 3*sd(neutral_response_time, na.rm = TRUE))
+  erresponse_time = as.numeric(temp$erresponseTime)
+  outlier_index_neutral = which(neutral_response_time > mean(neutral_response_time,na.rm = TRUE) + 3*sd(neutral_response_time, na.rm = TRUE))
+  outlier_index_erresponse = which(erresponse_time > mean(erresponse_time,na.rm = TRUE) + 3*sd(erresponse_time, na.rm = TRUE))
+  outlier_index[i] = list(c(outlier_index_erresponse, outlier_index_neutral))
 }
 
 for (i in 1:length(response_time_data)) {
