@@ -1,12 +1,19 @@
 library(dplyr)
 
 #variable files store all the raw data
-file_names = list.files(path = "/Users/Guest/Desktop/labWork/data",pattern = "*.csv",full.names = TRUE)
+file_names = list.files(path = "/Users/Guest/Desktop/labWork/Condition1",pattern = "*.csv",full.names = TRUE)
 files = list()
 for(i in 1:length(file_names)){
   files[[i]] = read.csv(file_names[i])
 }
 
+#check if the files contain the column names needed
+#temp = rep(0,length(files))
+#for(i in 1:length(files)){
+#  col_names = colnames(files[[i]])
+#  temp[i] = "key_resp_10.rt" %in% col_names
+#} 
+#NO ISSUE WITH FILE NAMES!
 
 # select only the accuracy data
 selected_files = list()
@@ -21,7 +28,10 @@ for(i in 1:length(selected_files)){
   colnames(selected_files[[i]]) = c("trial", "neutralresponse", "erresponse", "neutralResponseTime", "erresponseTime")
 }
 
-
+#check on the exception
+exception_1 = read.csv("/Users/Guest/Desktop/labWork/Condition1/4_experiment1_2019_Oct_16_1259.csv")
+#exception_1 = data.frame(cbind(exception_1$ImageFile, exception_1$study_same_key.keys, exception_1$key_resp_10.keys, exception_1$study_same_key.rt, exception_1$key_resp_10.rt))
+#colnames(exception_1) = c("trial", "neutralresponse", "erresponse", "neutralResponseTime", "erresponseTime")
 
 #only select rows that have trials
 for(i in 1:length(selected_files)){
@@ -95,6 +105,24 @@ for(i in 1:length(selected_files)){
 }
 
 
+
+#calculate mean of neutral and erresponse RT BEFORE DROPPING OUTLIERS
+neutral_mean = list()
+erresponse_mean = list()
+for (i in 1:length(response_time_data)) {
+  #neutral_time = as.numeric(response_time_data[[i]]$neutralresponseTime) #TODO: change original file as well
+  #erresponse_time = as.numeric(response_time_data[[i]]$erresponseTime)
+  #neutral_mean[[i]] = mean(temp$neutralResponseTime, na.rm = TRUE)
+  #erresponse_mean[[i]] = mean(temp$erresponseTime, na.rm = TRUE)
+  neutral_mean[[i]] = mean(as.numeric(response_time_data[[i]]$neutralResponseTime), na.rm = TRUE)
+  erresponse_mean[[i]] = mean(as.numeric(response_time_data[[i]]$erresponseTime), na.rm = TRUE)
+}
+
+neutral_mean = sapply(neutral_mean, "[[", 1)
+erresponse_mean = sapply(erresponse_mean, "[[", 1)
+file_to_be_handed_in_friday = data.frame(accuracy = accuracy_with_id$accuracy, neutralMean = neutral_mean, erresponseMean = erresponse_mean)
+write.csv(file_to_be_handed_in_friday, file = "Friday.csv")
+temp = read.csv("friday.csv")
 
 #deal with neutral response time data
 #drop outliers
