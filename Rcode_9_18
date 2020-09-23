@@ -97,8 +97,6 @@ for(i in 1:length(selected_files)){
 }
 
 
-
-
 #get id of each participant by extracting digits from file names
 file_names = list.files(path = "/Users/Guest/Desktop/labWork/Condition1",pattern = "*.csv")
 id_temp = sapply(strsplit(file_names, split = "_"), head, n = 1)
@@ -107,7 +105,7 @@ id_temp = sapply(strsplit(id_temp, split = " "), head, n = 1)
 length(id_temp) == length(file_names)
   ## file names and ids are of the same length so I assume the file names have been converted to ids
 
-accuracy_with_id = list(id = id_temp, accuracy = accuracy_calculated)
+accuracy_with_id = list(id = id_temp, erresponseAccuracy = accuracy_erresponse, neutralAccuracy = accuracy_neutral)
 accuracy_with_id = data.frame(accuracy_with_id)
 
 #rename files with their id
@@ -164,4 +162,8 @@ for(i in 1:length(response_time_data)){
 for (i in 1:length(response_time_data)) {
   response_time_data[[i]] = response_time_data[[i]][, -as.vector(outlier_index[[i]])]
 }
+
+#TODO: in Condition 3, change emotional errelevant files answer to SAME for 4th & 10th trial
+#TODO: for all conditions, neutral file, image 4,8,13, answer is SAME
+#TODO: remove outliers
 
